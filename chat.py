@@ -71,7 +71,9 @@ def ask(user_text):
 
     response = openai.ChatCompletion.create(
       model = MODEL,
-      messages = chat_history
+      messages = chat_history,
+      request_timeout = 30,
+      timeout = 30
     )
     response_text = response.choices[0].message.content
     total_tokens = response.usage.total_tokens
@@ -87,7 +89,7 @@ while True:
         if user_text == 'cls':
             clear_context()
             continue
-        if user_text == 'bye':
+        if user_text in ('exit', 'bye', 'quit'):
             print('bye')
             break
         response = ask(user_text)
