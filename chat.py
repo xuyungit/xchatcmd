@@ -49,15 +49,10 @@ def clear_context():
     global chat_total_tokens
     chat_total_tokens = 0
 
-# ChatGPT 最大可以存储 4096 个 token（大约16384个英文字母）的上下文，当一个会话的内容超出这个数量，最前面的信息就会被遗忘。
-# 而 ChatGPT API 每次都要将完整的上下文传递过去，这意味着我们可以选择保留重要的信息，选择性地去掉一些无用的以避免超出限制。
-# 对于中文的token的计算和英文不大一样，4096个token不意味着16384个中文字符。粗糙实现先暂定为7000个字符
+# ChatGPT 最大可以存储 4096 个 token
 # 当前的实现是使用ChatGPT返回的token数量
 def is_token_reached_max():
     return chat_total_tokens >= 4096
-    # global chat_history
-    # all_text = ''.join([item['content'] for item in chat_history])
-    # return len(all_text) > 7000
 
 def trim_history():
     global chat_history
@@ -80,21 +75,45 @@ def ask(user_text):
     append_assistant_message(response_text, total_tokens)
     return response_text
 
+def get_input(prompt_mark, multiple_line=False):
+    print(prompt_mark, end='')
+    first_line = input()
+    if first_line.strip() in ('cls', 'exit', 'bye', 'quit'):
+        return first_line.strip()
+    lines = [first_line]
+    if multiple_line:
+        while True:
+            try:
+                line = input()
+                lines.append(line)
+            except EOFError:
+                print('  ')  # Eminate the ^D
+                break
+    return '\n'.join(lines)
+
+multiline_mode = False
+if '-m' in sys.argv:
+    multiline_mode = True
+
 print(f"欢迎使用ChatGPT，会话中使用bye退出，cls清除聊天上下文")
+if multiline_mode:
+    print('当前运行在多行模式下，输入完成后，另起一行按Ctrl+D来进行发送')
+
 while True:
     try:
-        user_text = input('> ')
+        user_text = get_input('You: ', multiline_mode)
         if len(user_text.strip()) == 0:
             continue
-        if user_text == 'cls':
+        if user_text.strip() == 'cls':
             clear_context()
             continue
-        if user_text in ('exit', 'bye', 'quit'):
+        if user_text.strip() in ('exit', 'bye', 'quit'):
             print('bye')
             break
+        if not multiline_mode:
+            print(f'You:\n{user_text}', flush=True)
         response = ask(user_text)
-        print(f'You:\n{user_text}')
-        print(f"ChatGPT:\n{response}")
+        print(f"ChatGPT:\n{response}\n")
         trim_history()
     except KeyboardInterrupt:
         print('bye')
