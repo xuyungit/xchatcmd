@@ -36,12 +36,11 @@ def clear_context():
 
 # ChatGPT 最大可以存储 4096 个 token（大约16384个英文字母）的上下文，当一个会话的内容超出这个数量，最前面的信息就会被遗忘。
 # 而 ChatGPT API 每次都要将完整的上下文传递过去，这意味着我们可以选择保留重要的信息，选择性地去掉一些无用的以避免超出限制。
-# 对于中文的token的计算和英文不大一样，4096个token不意味着16384个中文字符。粗糙实现先暂定为10000个字符
+# 对于中文的token的计算和英文不大一样，4096个token不意味着16384个中文字符。粗糙实现先暂定为7000个字符
 def is_token_reached_max():
     global chat_history
     all_text = ''.join([item['content'] for item in chat_history])
-    print(len(all_text))
-    return len(all_text) > 10000
+    return len(all_text) > 7000
 
 def trim_history():
     global chat_history
