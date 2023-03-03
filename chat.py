@@ -1,6 +1,16 @@
+import os
+import sys
 import openai
 
-openai.api_key_path = '.apikey'
+home_dir = os.path.expanduser("~")
+expected_apikey_filename = os.path.join(home_dir, '.apikey')
+if os.path.exists(expected_apikey_filename):
+    openai.api_key_path = expected_apikey_filename
+elif os.path.exists('.apikey'):
+    openai.api_key_path = '.apikey'
+else:
+    print('apikey is not available')
+    sys.exit(1)
 
 # possible system messages:
 # You are a helpful assistant.
