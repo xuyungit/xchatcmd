@@ -30,7 +30,7 @@ chat_history = [
     {"role": "system", "content": f"{system_message}"},
 ]
 chat_total_tokens = 0
-temperature = 1.0
+temperature = 0.7
 
 def append_user_message(user_text):
     chat_history.append({
@@ -73,7 +73,7 @@ def get_remote_ip():
     else:
         return 'Unknown'
 def log_prompt(remote_ip, user_text):
-    with open('.chatcpt.log', 'a') as f:
+    with open('.chatgpt.log', 'a') as f:
         f.write(f'{remote_ip}: {user_text}\n')
 
 # Todo: add more parameters
