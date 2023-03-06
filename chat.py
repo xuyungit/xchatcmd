@@ -5,7 +5,6 @@ import readline
 from rich.console import Console
 from rich.markdown import Markdown
 
-
 home_dir = os.path.expanduser("~")
 expected_apikey_filename = os.path.join(home_dir, '.apikey')
 if os.path.exists(expected_apikey_filename):
@@ -83,8 +82,8 @@ def ask(user_text):
     return response_text
 
 def get_input(prompt_mark, multiple_line=False):
-    print(prompt_mark, end='')
-    first_line = input()
+    # print(prompt_mark, end='')
+    first_line = input(prompt_mark)
     if first_line.strip() in ('cls', 'exit', 'bye', 'quit', 's', 'm'):
         return first_line.strip()
     if first_line.strip().startswith('t='):
