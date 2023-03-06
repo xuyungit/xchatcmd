@@ -1,6 +1,10 @@
 import os
 import sys
 import openai
+import readline
+from rich.console import Console
+from rich.markdown import Markdown
+
 
 home_dir = os.path.expanduser("~")
 expected_apikey_filename = os.path.join(home_dir, '.apikey')
@@ -20,12 +24,14 @@ else:
 # available models: "gpt-3.5-turbo", "gpt-3.5-turbo-0301"
 
 MODEL = "gpt-3.5-turbo"
-system_message = 'You are a helpful teacher. Answer as detailed as possible..'
+system_message = 'You are a helpful teacher. Answer as detailed as possible.'
+system_message = 'You are a helpful assistant.'
 
 chat_history = [
     {"role": "system", "content": f"{system_message}"},
 ]
 chat_total_tokens = 0
+temperature = 1.0
 
 def append_user_message(user_text):
     chat_history.append({
@@ -68,7 +74,8 @@ def ask(user_text):
       model = MODEL,
       messages = chat_history,
       request_timeout = 30,
-      timeout = 30
+      timeout = 30,
+      temperature = temperature
     )
     response_text = response.choices[0].message.content
     total_tokens = response.usage.total_tokens
@@ -78,8 +85,11 @@ def ask(user_text):
 def get_input(prompt_mark, multiple_line=False):
     print(prompt_mark, end='')
     first_line = input()
-    if first_line.strip() in ('cls', 'exit', 'bye', 'quit'):
+    if first_line.strip() in ('cls', 'exit', 'bye', 'quit', 's', 'm'):
         return first_line.strip()
+    if first_line.strip().startswith('t='):
+        return first_line.strip()
+    
     lines = [first_line]
     if multiple_line:
         while True:
@@ -91,13 +101,44 @@ def get_input(prompt_mark, multiple_line=False):
                 break
     return '\n'.join(lines)
 
+def switch_to_multiple_line_mode():
+    global multiline_mode
+    multiline_mode = True
+    print('当前运行在多行模式下，输入完成后，另起一行按Ctrl+D来进行发送。使用s命令切换到单行模式。')
+
+def switch_to_single_line_mode():
+    global multiline_mode
+    multiline_mode = False
+    print('当前运行在单行模式下，回车即发送。使用m命令切换到多行模式。')
+
+def change_temperature(setting):
+    if setting.startswith('t='):
+        try:
+            val = float(setting.split('=')[-1])
+        except ValueError:
+            print('非法设置')
+            return
+        if 0 <= val <= 2:
+            global temperature
+            temperature = val
+            print(f'Temperature参数修改为{val}')
+        else:
+            print(f'Temperature参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
+
+console = Console()
+
 multiline_mode = False
 if '-m' in sys.argv:
     multiline_mode = True
+colorful_mode = False
+if '-c' in sys.argv:
+    colorful_mode = True
 
-print(f"欢迎使用ChatGPT，会话中使用bye退出，cls清除聊天上下文")
+print(f"欢迎使用ChatGPT，会话中使用bye退出，cls清除聊天上下文，m切换多行模式")
+print(f'可以使用t=0.2这样的方式设置Temperature参数。参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
+
 if multiline_mode:
-    print('当前运行在多行模式下，输入完成后，另起一行按Ctrl+D来进行发送')
+    switch_to_multiple_line_mode()
 
 while True:
     try:
@@ -106,14 +147,36 @@ while True:
             continue
         if user_text.strip() == 'cls':
             clear_context()
+            print('聊天上下文已经清除。')
+            continue
+        if user_text.strip() == 'm':
+            switch_to_multiple_line_mode()
+            continue
+        if user_text.strip() == 's':
+            switch_to_single_line_mode()
+            continue
+        if user_text.startswith('t='):
+            change_temperature(user_text)
             continue
         if user_text.strip() in ('exit', 'bye', 'quit'):
             print('bye')
             break
         if not multiline_mode:
-            print(f'You:\n{user_text}', flush=True)
-        response = ask(user_text)
-        print(f"ChatGPT:\n{response}\n")
+            if colorful_mode:
+                console.print(f"[bold yellow]You[/bold yellow]\n{user_text}")
+            else:
+                print(f'You\n{user_text}', flush=True)
+        with console.status("[bold green]Asking...", spinner="point") as status:
+            response = ask(user_text)
+            # print(f"ChatGPT:\n{response}\n")
+            if colorful_mode:
+                console.print("[bold blue]ChatGPT[/bold blue]")
+                markdown = Markdown(response, inline_code_lexer="auto", inline_code_theme="monokai",)
+                console.print(markdown)
+            else:
+                print("ChatGPT")
+                print(response)
+            status.update("[bold green]Done!")
         trim_history()
     except KeyboardInterrupt:
         print('bye')
