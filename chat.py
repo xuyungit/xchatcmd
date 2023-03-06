@@ -65,9 +65,21 @@ def trim_history():
         chat_history = chat_history[:1] + chat_history[-10:]
         print(f'！！！注意：当前对话交互文字过多，现在仅保留最后5次交互。！！！\n建议适当时使用cls清除上下文，开始新的会话')
 
+def get_remote_ip():
+    ssh_connection = os.environ.get('SSH_CONNECTION')
+    if ssh_connection:
+        remote_ip = ssh_connection.split()[0]
+        return remote_ip
+    else:
+        return 'Unknown'
+def log_prompt(remote_ip, user_text):
+    with open('.chatcpt.log', 'a') as f:
+        f.write(f'{remote_ip}: {user_text}\n')
+
 # Todo: add more parameters
 def ask(user_text):
     append_user_message(user_text)
+    log_prompt(get_remote_ip(), user_text)
 
     response = openai.ChatCompletion.create(
       model = MODEL,
