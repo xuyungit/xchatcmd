@@ -14,7 +14,6 @@ elif os.path.exists('.apikey'):
 else:
     print('apikey is not available')
     sys.exit(1)
-
 # possible system messages:
 # You are a helpful assistant.
 # You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. 
@@ -141,9 +140,9 @@ console = Console()
 multiline_mode = False
 if '-m' in sys.argv:
     multiline_mode = True
-colorful_mode = False
+colorful_mode = True
 if '-c' in sys.argv:
-    colorful_mode = True
+    colorful_mode = False
 
 print(f"欢迎使用ChatGPT，会话中使用bye退出，cls清除聊天上下文，m切换多行模式")
 print(f'可以使用t=0.2这样的方式设置Temperature参数。参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
