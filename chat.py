@@ -4,6 +4,7 @@ import openai
 import readline
 from rich.console import Console
 from rich.markdown import Markdown
+from prompt_toolkit import prompt
 
 home_dir = os.path.expanduser("~")
 expected_apikey_filename = os.path.join(home_dir, '.apikey')
@@ -93,7 +94,10 @@ def ask(user_text):
     return response_text
 
 def get_input(prompt_mark, multiple_line=False):
-    # print(prompt_mark, end='')
+    if not multiline_mode:
+        return input(prompt_mark).strip()
+    ret = prompt(prompt_mark, multiline=True)
+    return ret
     first_line = input(prompt_mark)
     if first_line.strip() in ('cls', 'exit', 'bye', 'quit', 's', 'm'):
         return first_line.strip()
@@ -114,7 +118,7 @@ def get_input(prompt_mark, multiple_line=False):
 def switch_to_multiple_line_mode():
     global multiline_mode
     multiline_mode = True
-    print('当前运行在多行模式下，输入完成后，另起一行按Ctrl+D来进行发送。使用s命令切换到单行模式。')
+    print('当前运行在多行模式下，输入完成后，按Alt+Enter来进行发送。使用s命令切换到单行模式。')
 
 def switch_to_single_line_mode():
     global multiline_mode
@@ -171,11 +175,11 @@ while True:
         if user_text.strip() in ('exit', 'bye', 'quit'):
             print('bye')
             break
-        if not multiline_mode:
-            if colorful_mode:
-                console.print(f"[bold yellow]You[/bold yellow]\n{user_text}")
-            else:
-                print(f'You\n{user_text}', flush=True)
+        # if not multiline_mode:
+        #     if colorful_mode:
+        #         console.print(f"[bold yellow]You[/bold yellow]\n{user_text}")
+        #     else:
+        #         print(f'You\n{user_text}', flush=True)
         with console.status("[bold green]Asking...", spinner="point") as status:
             response = ask(user_text)
             # print(f"ChatGPT:\n{response}\n")
