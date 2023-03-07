@@ -96,7 +96,7 @@ def ask(user_text):
 def get_input(prompt_mark, multiple_line=False):
     if not multiline_mode:
         return input(prompt_mark).strip()
-    ret = prompt(prompt_mark, multiline=True)
+    ret = prompt(prompt_mark, multiline=True, prompt_continuation="")
     return ret
     first_line = input(prompt_mark)
     if first_line.strip() in ('cls', 'exit', 'bye', 'quit', 's', 'm'):
