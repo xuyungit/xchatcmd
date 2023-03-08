@@ -1,6 +1,7 @@
 import os
 import sys
 import openai
+import datetime
 import readline
 from rich.console import Console
 from rich.markdown import Markdown
@@ -72,9 +73,20 @@ def get_remote_ip():
         return remote_ip
     else:
         return 'Unknown'
+
+def get_timestamp():
+    now = datetime.datetime.now()                                                                                                                                                                                                   
+    formatted_time = now.strftime("%Y-%m-%d %H:%M")                                                                                                                                                                                 
+    return formatted_time
+
+def log_answer(answer_text):
+    with open('.chatgpt.log', 'a') as f:
+        name = 'ChatGPT'
+        f.write(f'{name:>15} {get_timestamp()}: {answer_text}\n')
+
 def log_prompt(remote_ip, user_text):
     with open('.chatgpt.log', 'a') as f:
-        f.write(f'{remote_ip}: {user_text}\n')
+        f.write(f'{remote_ip:>15} {get_timestamp()}: {user_text}\n')
 
 # Todo: add more parameters
 def ask(user_text):
@@ -182,6 +194,7 @@ while True:
         #         print(f'You\n{user_text}', flush=True)
         with console.status("[bold green]Asking...", spinner="point") as status:
             response = ask(user_text)
+            log_answer(response)
             # print(f"ChatGPT:\n{response}\n")
             if colorful_mode:
                 console.print("[bold blue]ChatGPT[/bold blue]")
