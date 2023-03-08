@@ -6,6 +6,13 @@ import readline
 from rich.console import Console
 from rich.markdown import Markdown
 from prompt_toolkit import prompt
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.filters import (
+    emacs_insert_mode,
+    is_multiline,
+    vi_insert_mode,
+    in_paste_mode
+)
 
 home_dir = os.path.expanduser("~")
 expected_apikey_filename = os.path.join(home_dir, '.apikey')
@@ -32,6 +39,24 @@ chat_history = [
 ]
 chat_total_tokens = 0
 temperature = 0.7
+
+commands = ('cls', 'm', 's', 'bye')
+bindings = KeyBindings()
+insert_mode = vi_insert_mode | emacs_insert_mode
+
+def is_command(text):
+    text = text.strip()
+    if text.startswith('t='):
+        return True
+    if text in commands:
+        return True
+
+@bindings.add('enter', filter=insert_mode & is_multiline)
+def _(event):
+    if is_command(event.current_buffer.text):
+        event.current_buffer.validate_and_handle()
+    else:
+        event.current_buffer.newline(copy_margin=not in_paste_mode())
 
 def append_user_message(user_text):
     chat_history.append({
@@ -108,7 +133,7 @@ def ask(user_text):
 def get_input(prompt_mark, multiple_line=False):
     if not multiline_mode:
         return input(prompt_mark).strip()
-    ret = prompt(prompt_mark, multiline=True, prompt_continuation="")
+    ret = prompt(prompt_mark, multiline=True, prompt_continuation="", key_bindings=bindings)
     return ret
     first_line = input(prompt_mark)
     if first_line.strip() in ('cls', 'exit', 'bye', 'quit', 's', 'm'):
