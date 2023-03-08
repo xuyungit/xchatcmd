@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.shortcuts import message_dialog
 from prompt_toolkit.filters import (
     emacs_insert_mode,
     is_multiline,
@@ -40,7 +41,7 @@ chat_history = [
 chat_total_tokens = 0
 temperature = 0.7
 
-commands = ('cls', 'm', 's', 'bye')
+commands = ('cls', 'm', 's', 'bye', 'h')
 bindings = KeyBindings()
 insert_mode = vi_insert_mode | emacs_insert_mode
 
@@ -135,22 +136,6 @@ def get_input(prompt_mark, multiple_line=False):
         return input(prompt_mark).strip()
     ret = prompt(prompt_mark, multiline=True, prompt_continuation="", key_bindings=bindings)
     return ret
-    first_line = input(prompt_mark)
-    if first_line.strip() in ('cls', 'exit', 'bye', 'quit', 's', 'm'):
-        return first_line.strip()
-    if first_line.strip().startswith('t='):
-        return first_line.strip()
-    
-    lines = [first_line]
-    if multiple_line:
-        while True:
-            try:
-                line = input()
-                lines.append(line)
-            except EOFError:
-                print('  ')  # Eminate the ^D
-                break
-    return '\n'.join(lines)
 
 def switch_to_multiple_line_mode():
     global multiline_mode
@@ -176,6 +161,21 @@ def change_temperature(setting):
         else:
             print(f'Temperature参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
 
+def show_help_dialog():
+    help_text = '''
+h: 显示帮助
+bye: 退出
+cls: 清除聊天上下文
+m: 切换多行模式
+s: 切换单行模式
+t=float_val: 设置Temperature参数。参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大
+Press ENTER to quit.
+'''
+    message_dialog(
+        title='Help',
+        text=help_text
+    ).run()
+
 console = Console()
 
 multiline_mode = False
@@ -185,7 +185,7 @@ colorful_mode = True
 if '-c' in sys.argv:
     colorful_mode = False
 
-print(f"欢迎使用ChatGPT，会话中使用bye退出，cls清除聊天上下文，m切换多行模式")
+print(f"欢迎使用ChatGPT，会话中使用h显示帮助，bye退出，cls清除聊天上下文，m切换多行模式")
 print(f'可以使用t=0.2这样的方式设置Temperature参数。参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
 
 if multiline_mode:
@@ -208,6 +208,9 @@ while True:
             continue
         if user_text.startswith('t='):
             change_temperature(user_text)
+            continue
+        if user_text.strip() == 'h':
+            show_help_dialog()
             continue
         if user_text.strip() in ('exit', 'bye', 'quit'):
             print('bye')
