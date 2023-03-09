@@ -1,3 +1,5 @@
 venv
 venv2
 .apikey
+__pycache__
+.chatgpt.log
