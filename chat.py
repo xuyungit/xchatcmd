@@ -2,7 +2,6 @@ import os
 import sys
 import openai
 import datetime
-import readline
 from rich.console import Console
 from rich.markdown import Markdown
 from prompt_toolkit import prompt
@@ -24,6 +23,7 @@ elif os.path.exists('.apikey'):
 else:
     print('apikey is not available')
     sys.exit(1)
+
 # possible system messages:
 # You are a helpful assistant.
 # You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. 
@@ -133,7 +133,7 @@ def ask(user_text):
 
 def get_input(prompt_mark, multiple_line=False):
     if not multiline_mode:
-        return input(prompt_mark).strip()
+        return prompt(prompt_mark).strip()
     ret = prompt(prompt_mark, multiline=True, prompt_continuation="", key_bindings=bindings)
     return ret
 
