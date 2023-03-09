@@ -16,6 +16,7 @@ from prompt_toolkit.filters import (
 
 home_dir = os.path.expanduser("~")
 expected_apikey_filename = os.path.join(home_dir, '.apikey')
+
 if os.path.exists(expected_apikey_filename):
     openai.api_key_path = expected_apikey_filename
 elif os.path.exists('.apikey'):
@@ -23,6 +24,13 @@ elif os.path.exists('.apikey'):
 else:
     print('apikey is not available')
     sys.exit(1)
+
+if os.path.exists('.apibase'):
+    openai.api_base = open('.apibase').read().strip()
+else:
+    expected_apibase_filename = os.path.join(home_dir, '.apibase')
+    if os.path.exists(expected_apibase_filename):
+        openai.api_base = open(expected_apibase_filename).read().strip()
 
 # possible system messages:
 # You are a helpful assistant.
