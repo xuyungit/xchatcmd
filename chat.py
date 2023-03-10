@@ -7,6 +7,7 @@ from rich.markdown import Markdown
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.shortcuts import message_dialog
+from prompt_toolkit.validation import Validator
 from prompt_toolkit.filters import (
     emacs_insert_mode,
     is_multiline,
@@ -139,9 +140,26 @@ def ask(user_text):
     append_assistant_message(response_text, total_tokens)
     return response_text
 
+def is_valid_cmd(text):
+    if text.strip().startswith('t='):
+        try:
+            val = float(text.split('=')[-1])
+        except ValueError:
+            return False
+        if 0 <= val <= 2:
+            return True
+        else:
+            return False
+    return True    
+        
 def get_input(prompt_mark, multiple_line=False):
-    if not multiline_mode:
-        return prompt(prompt_mark).strip()
+    validator = Validator.from_callable(
+        is_valid_cmd,
+        error_message="非法命令，请输入h查看帮助",
+        move_cursor_to_end=True
+    )
+    if not multiple_line:
+        return prompt(prompt_mark, validator=validator, validate_while_typing=False).strip()
     ret = prompt(prompt_mark, multiline=True, prompt_continuation="", key_bindings=bindings)
     return ret
 
