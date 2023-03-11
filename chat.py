@@ -8,6 +8,7 @@ from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.shortcuts import message_dialog
 from prompt_toolkit.validation import Validator
+from prompt_toolkit.shortcuts import input_dialog
 from prompt_toolkit.filters import (
     emacs_insert_mode,
     is_multiline,
@@ -90,10 +91,25 @@ def clear_context():
     global chat_total_tokens
     chat_total_tokens = 0
 
+def change_system_message(text):
+    if text is None:
+        return
+    global chat_history
+    if not text.strip():
+        chat_history = []
+    else:
+        global system_message
+        system_message = text
+        chat_history = [
+            {"role": "system", "content": f"{system_message}"},
+        ]
+    global chat_total_tokens
+    chat_total_tokens = 0
+        
 # ChatGPT 最大可以存储 4096 个 token
 # 当前的实现是使用ChatGPT返回的token数量
 def is_token_reached_max():
-    return chat_total_tokens >= 4096
+    return chat_total_tokens >= 4000
 
 def trim_history():
     global chat_history
@@ -234,6 +250,14 @@ while True:
             continue
         if user_text.startswith('t='):
             change_temperature(user_text)
+            continue
+        if user_text.startswith('system='):
+            ret = input_dialog(
+                title="Change system prompt message",
+                text="Current System Message is",
+                default=system_message
+            ).run()
+            change_system_message(ret)
             continue
         if user_text.strip() == 'h':
             show_help_dialog()
