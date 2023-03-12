@@ -47,8 +47,8 @@ def ask(user_text: str, temperature: float) -> tuple[str, int]:
       timeout = 120,
       temperature = temperature
     )
-    response_text:str = response.choices[0].message.content
-    total_tokens:int = response.usage.total_tokens
+    response_text:str = response.choices[0].message.content # type: ignore
+    total_tokens:int = response.usage.total_tokens # type: ignore
     return response_text, total_tokens
 
 # def ask(user_text, temperature):

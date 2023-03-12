@@ -152,8 +152,8 @@ def ask(user_text):
       timeout = 120,
       temperature = temperature
     )
-    response_text = response.choices[0].message.content
-    total_tokens = response.usage.total_tokens
+    response_text = response.choices[0].message.content # type: ignore
+    total_tokens = response.usage.total_tokens # type: ignore
     append_assistant_message(response_text, total_tokens)
     return response_text
 
@@ -185,8 +185,8 @@ def handle_stream_output(user_text):
     with Live("[bold green]Asking...", refresh_per_second=0.5) as live:
         response = ask_stream(user_text)
         for v in response:
-            if v.choices and "content" in v.choices[0].delta and v.choices[0].delta.content:
-                content += v.choices[0].delta.content
+            if v.choices and "content" in v.choices[0].delta and v.choices[0].delta.content:  # type: ignore
+                content += v.choices[0].delta.content  # type: ignore
                 _print(content, live.update)
         append_assistant_message(content, 0)
         
