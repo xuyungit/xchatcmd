@@ -4,6 +4,7 @@ import openai
 import datetime
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.live import Live
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.shortcuts import message_dialog
@@ -42,7 +43,7 @@ else:
 # available models: "gpt-3.5-turbo", "gpt-3.5-turbo-0301"
 
 MODEL = "gpt-3.5-turbo"
-system_message = 'You are a helpful teacher. Answer as detailed as possible.'
+# system_message = 'You are a helpful teacher. Answer as detailed as possible.'
 system_message = 'You are a helpful assistant.'
 
 chat_history = [
@@ -156,6 +157,39 @@ def ask(user_text):
     append_assistant_message(response_text, total_tokens)
     return response_text
 
+def ask_stream(user_text):
+    append_user_message(user_text)
+    log_prompt(get_remote_ip(), user_text)
+
+    response = openai.ChatCompletion.create(
+      model = MODEL,
+      messages = chat_history,
+      request_timeout = 120,
+      timeout = 120,
+      temperature = temperature,
+      stream=True
+    )
+    return response
+
+def _print(text, render):
+    content = text
+    markdown = Markdown(
+        content,
+        inline_code_lexer="auto",
+        inline_code_theme="monokai",
+    )
+    render(markdown)
+    
+def handle_stream_output(user_text):
+    content = ""
+    with Live("[bold green]Asking...", refresh_per_second=0.5) as live:
+        response = ask_stream(user_text)
+        for v in response:
+            if v.choices and "content" in v.choices[0].delta and v.choices[0].delta.content:
+                content += v.choices[0].delta.content
+                _print(content, live.update)
+        append_assistant_message(content, 0)
+        
 def is_valid_cmd(text):
     if text.strip().startswith('t='):
         try:
@@ -265,23 +299,21 @@ while True:
         if user_text.strip() in ('exit', 'bye', 'quit'):
             print('bye')
             break
-        # if not multiline_mode:
-        #     if colorful_mode:
-        #         console.print(f"[bold yellow]You[/bold yellow]\n{user_text}")
-        #     else:
-        #         print(f'You\n{user_text}', flush=True)
-        with console.status("[bold green]Asking...", spinner="point") as status:
-            response = ask(user_text)
-            log_answer(response)
-            # print(f"ChatGPT:\n{response}\n")
-            if colorful_mode:
-                console.print("[bold blue]ChatGPT[/bold blue]")
-                markdown = Markdown(response, inline_code_lexer="auto", inline_code_theme="monokai",)
-                console.print(markdown)
-            else:
-                print("ChatGPT")
-                print(response)
-            status.update("[bold green]Done!")
+        if False:
+            handle_stream_output(user_text)
+        else:
+            with console.status("[bold green]Asking...", spinner="point") as status:
+                response = ask(user_text)
+                log_answer(response)
+                # print(f"ChatGPT:\n{response}\n")
+                if colorful_mode:
+                    console.print("[bold blue]ChatGPT[/bold blue]")
+                    markdown = Markdown(response, inline_code_lexer="auto", inline_code_theme="monokai",)
+                    console.print(markdown)
+                else:
+                    print("ChatGPT")
+                    print(response)
+                status.update("[bold green]Done!")
         trim_history()
     except KeyboardInterrupt:
         print('bye')
