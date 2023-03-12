@@ -9,9 +9,9 @@ token_encoding = tiktoken.get_encoding("cl100k_base")
 
 def set_openapi_conf(api_key, api_base):
     if api_key:
-        openapi.api_key = api_key
+        openai.api_key = api_key
     if api_base:
-        openapi.api_base = api_base
+        openai.api_base = api_base
         
     if not api_key:
         home_dir = os.path.expanduser("~")
@@ -28,6 +28,7 @@ def set_openapi_conf(api_key, api_base):
         if os.path.exists('.apibase'):
             openai.api_base = open('.apibase').read().strip()
         else:
+            home_dir = os.path.expanduser("~")
             expected_apibase_filename = os.path.join(home_dir, '.apibase')
             if os.path.exists(expected_apibase_filename):
                 openai.api_base = open(expected_apibase_filename).read().strip()
