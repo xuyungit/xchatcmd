@@ -3,27 +3,34 @@ import sys
 import time
 import openai
 import tiktoken
+import argparse
 
 token_encoding = tiktoken.get_encoding("cl100k_base")
 
-def set_openapi_conf():
-    home_dir = os.path.expanduser("~")
-    expected_apikey_filename = os.path.join(home_dir, '.apikey')
-
-    if os.path.exists(expected_apikey_filename):
-        openai.api_key_path = expected_apikey_filename
-    elif os.path.exists('.apikey'):
-        openai.api_key_path = '.apikey'
-    else:
-        print('apikey is not available')
-        sys.exit(1)
-
-    if os.path.exists('.apibase'):
-        openai.api_base = open('.apibase').read().strip()
-    else:
-        expected_apibase_filename = os.path.join(home_dir, '.apibase')
-        if os.path.exists(expected_apibase_filename):
-            openai.api_base = open(expected_apibase_filename).read().strip()
+def set_openapi_conf(api_key, api_base):
+    if api_key:
+        openapi.api_key = api_key
+    if api_base:
+        openapi.api_base = api_base
+        
+    if not api_key:
+        home_dir = os.path.expanduser("~")
+        expected_apikey_filename = os.path.join(home_dir, '.apikey')
+    
+        if os.path.exists(expected_apikey_filename):
+            openai.api_key_path = expected_apikey_filename
+        elif os.path.exists('.apikey'):
+            openai.api_key_path = '.apikey'
+        else:
+            print('apikey is not available')
+            sys.exit(1)
+    if not api_base:
+        if os.path.exists('.apibase'):
+            openai.api_base = open('.apibase').read().strip()
+        else:
+            expected_apibase_filename = os.path.join(home_dir, '.apibase')
+            if os.path.exists(expected_apibase_filename):
+                openai.api_base = open(expected_apibase_filename).read().strip()
 
 def ask(user_text, temperature):
     MODEL = "gpt-3.5-turbo"
@@ -72,7 +79,7 @@ def translate(
         source_english_filename: str, 
         output_chinese_filename: str,
         start_split_no=1,
-        translate_limits=20) -> None:
+        translate_limits=65535) -> None:
     text = open(source_english_filename, encoding="utf-8").read()
 
     done = False
@@ -112,7 +119,26 @@ def translate(
         print('break')
     finally:
         print(f'Stopped at split {current_split_no}, finished {translate_limits} splits')
-        print(f'Token used: {total_tokens_used}, ${total_tokens_used / 1000 * 0.002} dollars.')
+        print(f'Token used: {total_tokens_used}, ${total_tokens_used / 1000 * 0.002:.3f} dollars.')
 
-set_openapi_conf()
-translate('storyofyourlife.txt', 'storyofyourlife_chn.txt')
+def get_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--id', help='You OpenAPI Key', required=False)
+    parser.add_argument('--api', help='You openAPI Base', required=False)
+    parser.add_argument('--src', help='Filename of the book to be translated', required=True)
+    parser.add_argument('--output', help='Filename of the translated output', required=True)
+    parser.add_argument('--start', help='The split number to start', type=int, default=1)
+    parser.add_argument('--splits', help='The number of splits to be translated', type=int, default=65536)
+    parser.add_argument('--temperature', help="API's temperature parameter (0~2.0)", type=float, default=0.6)
+
+    args = parser.parse_args()
+    return args
+
+arg = get_arguments()
+set_openapi_conf(arg.id, arg.api)
+translate(
+    source_english_filename=arg.src,
+    output_chinese_filename=arg.output,
+    start_split_no=arg.start,
+    translate_limits=arg.splits
+)
