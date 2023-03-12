@@ -147,8 +147,8 @@ def ask(user_text):
     response = openai.ChatCompletion.create(
       model = MODEL,
       messages = chat_history,
-      request_timeout = 30,
-      timeout = 30,
+      request_timeout = 120,
+      timeout = 120,
       temperature = temperature
     )
     response_text = response.choices[0].message.content
