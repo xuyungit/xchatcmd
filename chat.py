@@ -10,6 +10,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.shortcuts import message_dialog
 from prompt_toolkit.validation import Validator
 from prompt_toolkit.shortcuts import input_dialog
+from prompt_toolkit.styles import Style
 from prompt_toolkit.filters import (
     emacs_insert_mode,
     is_multiline,
@@ -208,9 +209,16 @@ def get_input(prompt_mark, multiple_line=False):
         error_message="非法命令，请输入h查看帮助",
         move_cursor_to_end=True
     )
+    custom_style = Style.from_dict({                                                                                                                                                                                                
+        'prompt': 'fg:#E0D562',  # Customize the prompt color                                                                                                                                                            
+    })    
     if not multiple_line:
-        return prompt(prompt_mark, validator=validator, validate_while_typing=False).strip()
-    ret = prompt(prompt_mark, multiline=True, prompt_continuation="", key_bindings=bindings)
+        return prompt(
+            prompt_mark, validator=validator, validate_while_typing=False, style=custom_style
+        ).strip()
+    ret = prompt(
+        prompt_mark, multiline=True, prompt_continuation="", key_bindings=bindings, style=custom_style
+    )
     return ret
 
 def switch_to_multiple_line_mode():
