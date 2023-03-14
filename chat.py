@@ -1,7 +1,8 @@
 import os
 import sys
-import openai
 import datetime
+import openai
+import tiktoken
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
@@ -56,6 +57,7 @@ temperature = 0.7
 commands = ('cls', 'm', 's', 'bye', 'h')
 bindings = KeyBindings()
 insert_mode = vi_insert_mode | emacs_insert_mode
+token_encoding = tiktoken.get_encoding("cl100k_base")
 
 def is_command(text):
     text = text.strip()
@@ -113,11 +115,21 @@ def change_system_message(text):
 def is_token_reached_max():
     return chat_total_tokens >= 4000
 
+def get_tokens(text: str) -> int:
+    return len(token_encoding.encode(text))
+
+def get_current_tokens(chat_context):
+    contents = [item['content'] for item in chat_context]
+    tokens = [get_tokens(txt) for txt in contents]
+    return sum(tokens)
+
 def trim_history():
     global chat_history
-    if is_token_reached_max():
-        chat_history = chat_history[:1] + chat_history[-10:]
-        print(f'！！！注意：当前对话交互文字过多，现在仅保留最后5次交互。！！！\n建议适当时使用cls清除上下文，开始新的会话')
+    if is_token_reached_max() or get_current_tokens(chat_history) > 4000:
+        chat_history = chat_history[:1] + chat_history[-5:]
+        while get_current_tokens(chat_history) > 4000 and len(chat_history) > 2:
+            chat_history = chat_history[:1] + chat_history[2:]
+        print(f'！！！注意：当前对话交互文字过多，现清除部分上下文。！！！\n建议适当时使用cls清除上下文，开始新的会话')
 
 def get_remote_ip():
     ssh_connection = os.environ.get('SSH_CONNECTION')
@@ -142,10 +154,7 @@ def log_prompt(remote_ip, user_text):
         f.write(f'{remote_ip:>15} {get_timestamp()}: {user_text}\n')
 
 # Todo: add more parameters
-def ask(user_text):
-    append_user_message(user_text)
-    log_prompt(get_remote_ip(), user_text)
-
+def ask(chat_history):
     response = openai.ChatCompletion.create(
       model = MODEL,
       messages = chat_history,
@@ -158,10 +167,7 @@ def ask(user_text):
     append_assistant_message(response_text, total_tokens)
     return response_text
 
-def ask_stream(user_text):
-    append_user_message(user_text)
-    log_prompt(get_remote_ip(), user_text)
-
+def ask_stream(chat_history):
     response = openai.ChatCompletion.create(
       model = MODEL,
       messages = chat_history,
@@ -307,11 +313,14 @@ while True:
         if user_text.strip() in ('exit', 'bye', 'quit'):
             print('bye')
             break
+        append_user_message(user_text)
+        trim_history()
+        log_prompt(get_remote_ip(), user_text)
         if False:
-            handle_stream_output(user_text)
+            handle_stream_output(chat_history)
         else:
             with console.status("[bold green]Asking...", spinner="point") as status:
-                response = ask(user_text)
+                response = ask(chat_history)
                 log_answer(response)
                 # print(f"ChatGPT:\n{response}\n")
                 if colorful_mode:
@@ -322,7 +331,6 @@ while True:
                     print("ChatGPT")
                     print(response)
                 status.update("[bold green]Done!")
-        trim_history()
     except KeyboardInterrupt:
         print('bye')
         break
