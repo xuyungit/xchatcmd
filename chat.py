@@ -6,6 +6,7 @@ import tiktoken
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
+from rich.panel import Panel
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.shortcuts import message_dialog
@@ -129,7 +130,7 @@ def trim_history():
         chat_history = chat_history[:1] + chat_history[-5:]
         while get_current_tokens(chat_history) > 4000 and len(chat_history) > 2:
             chat_history = chat_history[:1] + chat_history[2:]
-        print(f'！！！注意：当前对话交互文字过多，现清除部分上下文。！！！\n建议适当时使用cls清除上下文，开始新的会话')
+        box(console, '注意：当前对话交互文字过多，现清除部分上下文。\n建议适当时使用cls清除上下文，开始新的会话')
 
 def get_remote_ip():
     ssh_connection = os.environ.get('SSH_CONNECTION')
@@ -230,12 +231,12 @@ def get_input(prompt_mark, multiple_line=False):
 def switch_to_multiple_line_mode():
     global multiline_mode
     multiline_mode = True
-    print('当前运行在多行模式下，输入完成后，按Alt+Enter来进行发送。使用s命令切换到单行模式。')
+    box(console, '当前运行在多行模式下，输入完成后，按Alt+Enter来进行发送。使用s命令切换到单行模式。')
 
 def switch_to_single_line_mode():
     global multiline_mode
     multiline_mode = False
-    print('当前运行在单行模式下，回车即发送。使用m命令切换到多行模式。')
+    box(console, '当前运行在单行模式下，回车即发送。使用m命令切换到多行模式。')
 
 def change_temperature(setting):
     if setting.startswith('t='):
@@ -247,9 +248,9 @@ def change_temperature(setting):
         if 0 <= val <= 2:
             global temperature
             temperature = val
-            print(f'Temperature参数修改为{val}')
+            box(console, f'Temperature参数修改为{val}')
         else:
-            print(f'Temperature参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
+            box(console, f'Temperature参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
 
 def show_help_dialog():
     help_text = '''
@@ -266,6 +267,9 @@ Press ENTER to quit.
         text=help_text
     ).run()
 
+def box(console, message):
+    console.print(Panel(message, expand=False))
+
 console = Console()
 
 multiline_mode = False
@@ -275,8 +279,13 @@ colorful_mode = True
 if '-c' in sys.argv:
     colorful_mode = False
 
-print(f"欢迎使用ChatGPT，会话中使用h显示帮助，bye退出，cls清除聊天上下文，m切换多行模式")
-print(f'可以使用t=0.2这样的方式设置Temperature参数。参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}')
+welcome_message = f"""\
+欢迎使用**ChatGPT**，会话中使用`h`显示帮助，`bye`退出，`cls`清除聊天上下文，`m`切换多行模式
+
+可以使用`t=0.2`这样的方式设置`Temperature`参数。参数的取值范围为**0~2**，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{temperature}
+"""
+welcome_message = Markdown(welcome_message, inline_code_lexer="auto", inline_code_theme="monokai")
+box(console, welcome_message)
 
 if multiline_mode:
     switch_to_multiple_line_mode()
@@ -288,7 +297,7 @@ while True:
             continue
         if user_text.strip() == 'cls':
             clear_context()
-            print('聊天上下文已经清除。')
+            box(console, '聊天上下文已经清除。')
             continue
         if user_text.strip() == 'm':
             switch_to_multiple_line_mode()
@@ -311,7 +320,7 @@ while True:
             show_help_dialog()
             continue
         if user_text.strip() in ('exit', 'bye', 'quit'):
-            print('bye')
+            box(console, 'bye')
             break
         append_user_message(user_text)
         trim_history()
@@ -332,5 +341,5 @@ while True:
                     print(response)
                 status.update("[bold green]Done!")
     except KeyboardInterrupt:
-        print('bye')
+        box(console, 'bye')
         break
