@@ -31,7 +31,7 @@ def get_conf_content_by_name(name: str) -> str:
         return chosed_filename.read_text().strip()
     return ''
 
-def set_openapi_conf(api_key: str, api_base: str) -> None:
+def set_openapi_conf(api_key='', api_base='') -> None:
     """
     Configure the OpenAI API with the given API key and API base URL.
 

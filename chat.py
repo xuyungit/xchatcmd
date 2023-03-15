@@ -19,34 +19,18 @@ from prompt_toolkit.filters import (
     vi_insert_mode,
     in_paste_mode
 )
+from conf import set_openapi_conf
 
-home_dir = os.path.expanduser("~")
-expected_apikey_filename = os.path.join(home_dir, '.apikey')
-
-if os.path.exists(expected_apikey_filename):
-    openai.api_key_path = expected_apikey_filename
-elif os.path.exists('.apikey'):
-    openai.api_key_path = '.apikey'
-else:
-    print('apikey is not available')
-    sys.exit(1)
-
-if os.path.exists('.apibase'):
-    openai.api_base = open('.apibase').read().strip()
-else:
-    expected_apibase_filename = os.path.join(home_dir, '.apibase')
-    if os.path.exists(expected_apibase_filename):
-        openai.api_base = open(expected_apibase_filename).read().strip()
+set_openapi_conf()
 
 # possible system messages:
 # You are a helpful assistant.
-# You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. 
+# You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
 # You are a helpful advisor. Answer as concisely as possible.
 # You are a helpful teacher. Answer as detailed as possible.
 # available models: "gpt-3.5-turbo", "gpt-3.5-turbo-0301"
 
 MODEL = "gpt-3.5-turbo"
-# system_message = 'You are a helpful teacher. Answer as detailed as possible.'
 system_message = 'You are a helpful assistant.'
 
 chat_history = [
@@ -58,7 +42,6 @@ temperature = 0.7
 commands = ('cls', 'm', 's', 'bye', 'h')
 bindings = KeyBindings()
 insert_mode = vi_insert_mode | emacs_insert_mode
-token_encoding = tiktoken.get_encoding("cl100k_base")
 
 def is_command(text):
     text = text.strip()
@@ -110,13 +93,14 @@ def change_system_message(text):
         ]
     global chat_total_tokens
     chat_total_tokens = 0
-        
+
 # ChatGPT 最大可以存储 4096 个 token
 # 当前的实现是使用ChatGPT返回的token数量
 def is_token_reached_max():
     return chat_total_tokens >= 4000
 
 def get_tokens(text: str) -> int:
+    token_encoding = tiktoken.get_encoding("cl100k_base")
     return len(token_encoding.encode(text))
 
 def get_current_tokens(chat_context):
@@ -141,8 +125,8 @@ def get_remote_ip():
         return 'Unknown'
 
 def get_timestamp():
-    now = datetime.datetime.now()                                                                                                                                                                                                   
-    formatted_time = now.strftime("%Y-%m-%d %H:%M")                                                                                                                                                                                 
+    now = datetime.datetime.now()
+    formatted_time = now.strftime("%Y-%m-%d %H:%M")
     return formatted_time
 
 def log_answer(answer_text):
@@ -187,7 +171,7 @@ def _print(text, render):
         inline_code_theme="monokai",
     )
     render(markdown)
-    
+
 def handle_stream_output(user_text):
     content = ""
     with Live("[bold green]Asking...", refresh_per_second=0.5) as live:
@@ -197,7 +181,7 @@ def handle_stream_output(user_text):
                 content += v.choices[0].delta.content  # type: ignore
                 _print(content, live.update)
         append_assistant_message(content, 0)
-        
+
 def is_valid_cmd(text):
     if text.strip().startswith('t='):
         try:
@@ -208,17 +192,17 @@ def is_valid_cmd(text):
             return True
         else:
             return False
-    return True    
-        
+    return True
+
 def get_input(prompt_mark, multiple_line=False):
     validator = Validator.from_callable(
         is_valid_cmd,
         error_message="非法命令，请输入h查看帮助",
         move_cursor_to_end=True
     )
-    custom_style = Style.from_dict({                                                                                                                                                                                                
-        'prompt': 'fg:#E0D562',  # Customize the prompt color                                                                                                                                                            
-    })    
+    custom_style = Style.from_dict({
+        'prompt': 'fg:#E0D562',  # Customize the prompt color
+    })
     if not multiple_line:
         return prompt(
             prompt_mark, validator=validator, validate_while_typing=False, style=custom_style
