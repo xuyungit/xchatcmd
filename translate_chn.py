@@ -1,42 +1,8 @@
-import os
-import sys
 import time
-from pathlib import Path
 import argparse
 import openai
 import tiktoken
-
-token_encoding = tiktoken.get_encoding("cl100k_base")
-
-def set_openapi_conf(api_key: str, api_base: str) -> None:
-    if api_key:
-        openai.api_key = api_key
-    if api_base:
-        openai.api_base = api_base
-
-    def get_conf_content_by_name(name: str) -> str:
-        expected_filename_home = Path.home() / name
-        expected_filename_cwd = Path(name)
-        chosed_filename = None
-        if expected_filename_home.exists():
-            chosed_filename = expected_filename_home
-        elif expected_filename_cwd.exists():
-            chosed_filename = expected_filename_cwd
-        if chosed_filename:
-            return chosed_filename.read_text().strip()
-        return ''
-
-    if not openai.api_key:
-        content = get_conf_content_by_name('.apikey')
-        if content:
-            openai.api_key = content
-        else:
-            print('apikey is not available')
-            sys.exit(1)
-    if not api_base and not os.environ.get("OPENAI_API_BASE"):
-        content = get_conf_content_by_name('.apibase')
-        if content:
-            openai.api_base = content
+from conf import set_openapi_conf
 
 def ask(user_text: str, temperature: float) -> tuple[str, int]:
     MODEL = "gpt-3.5-turbo"
@@ -57,6 +23,7 @@ def ask(user_text: str, temperature: float) -> tuple[str, int]:
     return response_text, total_tokens
 
 def get_tokens(text: str) -> int:
+    token_encoding = tiktoken.get_encoding("cl100k_base")
     return len(token_encoding.encode(text))
 
 def get_next_split(text: str, start_pos: int, max_tokens=1365) -> tuple[str, int, int, bool]:
@@ -85,6 +52,7 @@ def translate(
         splits_to_translate=65535,
         temperature=0.6,
         max_token_per_request=1365) -> None:
+    
     text = open(source_english_filename, encoding="utf-8").read()
 
     done = False
@@ -143,6 +111,9 @@ def get_arguments():
 if __name__ == '__main__':
     arg = get_arguments()
     set_openapi_conf(arg.id, arg.api)
+    if not openai.api_key:
+        print('API KEY is not configured')
+        exit(1)
     translate(
         source_english_filename=arg.src,
         output_chinese_filename=arg.output,
