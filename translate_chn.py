@@ -4,7 +4,7 @@ import openai
 import tiktoken
 from conf import set_openapi_conf
 
-def ask(user_text: str, temperature: float) -> tuple[str, int]:
+def ask(user_text: str, temperature: float):
     MODEL = "gpt-3.5-turbo"
     response = openai.ChatCompletion.create(
       model = MODEL,
@@ -26,7 +26,7 @@ def get_tokens(text: str) -> int:
     token_encoding = tiktoken.get_encoding("cl100k_base")
     return len(token_encoding.encode(text))
 
-def get_next_split(text: str, start_pos: int, max_tokens=1365) -> tuple[str, int, int, bool]:
+def get_next_split(text: str, start_pos: int, max_tokens=1365):
     sentence_split_punctuation = '.!?'
     # Let's assume that each token has 6 character length on average
     end_pos = min(len(text) - 1, start_pos + max_tokens * 6)
@@ -52,7 +52,7 @@ def translate(
         splits_to_translate=65535,
         temperature=0.6,
         max_token_per_request=1365) -> None:
-    
+
     text = open(source_english_filename, encoding="utf-8").read()
 
     done = False
