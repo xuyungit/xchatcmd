@@ -1,8 +1,6 @@
 import os
 import sys
 import datetime
-import openai
-import tiktoken
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
@@ -18,97 +16,7 @@ from prompt_toolkit.filters import (
     vi_insert_mode,
     in_paste_mode
 )
-from conf import set_openapi_conf
-
-class ChatSession:
-    def __init__(self, console: Console):
-
-        # possible system messages:
-        # You are a helpful assistant.
-        # You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
-        # You are a helpful advisor. Answer as concisely as possible.
-        # You are a helpful teacher. Answer as detailed as possible.
-        # available models: "gpt-3.5-turbo", "gpt-3.5-turbo-0301"
-
-        self.system_message: str = 'You are a helpful assistant.'
-        self.chat_history = [
-            {"role": "system", "content": f"{self.system_message}"},
-        ]
-        self.chat_total_tokens = 0
-        self.temperature = 0.7
-        self.model = "gpt-3.5-turbo"
-        self.console = console
-        set_openapi_conf()
-
-    def _get_tokens(self, text: str) -> int:
-        token_encoding = tiktoken.get_encoding("cl100k_base")
-        return len(token_encoding.encode(text))
-
-    def _get_current_tokens(self):
-        contents = [item['content'] for item in self.chat_history]
-        tokens = [self._get_tokens(txt) for txt in contents]
-        return sum(tokens)
-
-    def append_user_message(self, user_text):
-        self.chat_history.append({
-            "role": "user",
-            "content": f"{user_text}"
-        })
-
-    def append_assistant_message(self, assistant_text, total_tokens):
-        self.chat_history.append({
-            "role": "assistant",
-            "content": f"{assistant_text}"
-        })
-        self.chat_total_tokens = total_tokens
-
-    def clear_context(self):
-        self.chat_history = [
-            {"role": "system", "content": f"{self.system_message}"},
-        ]
-        self.chat_total_tokens = 0
-
-    def change_system_message(self, text):
-        if text is None:
-            return
-        if not text.strip():
-            self.chat_history = []
-        else:
-            self.system_message = text
-            self.chat_history = [
-                {"role": "system", "content": f"{self.system_message}"},
-            ]
-        self.chat_total_tokens = 0
-
-    def trim_history(self):
-        if self.chat_total_tokens >= 4000 or self._get_current_tokens() > 4000:
-            self.chat_history = self.chat_history[:1] + self.chat_history[-5:]
-            while self._get_current_tokens() > 4000 and len(self.chat_history) > 2:
-                self.chat_history = self.chat_history[:1] + self.chat_history[2:]
-            return True
-        return False
-
-    def change_temperature(self, setting):
-        if setting.startswith('t='):
-            try:
-                val = float(setting.split('=')[-1])
-            except ValueError:
-                return
-            if 0 <= val <= 2:
-                self.temperature = val
-
-    def ask(self):
-        response = openai.ChatCompletion.create(
-            model = self.model,
-            messages = self.chat_history,
-            request_timeout = 120,
-            timeout = 120,
-            temperature = self.temperature
-        )
-        response_text = response.choices[0].message.content # type: ignore
-        total_tokens = response.usage.total_tokens # type: ignore
-        self.append_assistant_message(response_text, total_tokens)
-        return response_text
+from chat_session import ChatSession
 
 class CmdSession:
     commands = ('cls', 'm', 's', 'bye', 'h')
