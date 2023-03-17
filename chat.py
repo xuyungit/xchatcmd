@@ -20,8 +20,6 @@ from prompt_toolkit.filters import (
 )
 from conf import set_openapi_conf
 
-set_openapi_conf()
-
 class ChatSession:
     def __init__(self, console: Console):
 
@@ -40,6 +38,7 @@ class ChatSession:
         self.temperature = 0.7
         self.model = "gpt-3.5-turbo"
         self.console = console
+        set_openapi_conf()
 
     def _get_tokens(self, text: str) -> int:
         token_encoding = tiktoken.get_encoding("cl100k_base")
@@ -79,13 +78,13 @@ class ChatSession:
             self.chat_history = [
                 {"role": "system", "content": f"{self.system_message}"},
             ]
-        chat_total_tokens = 0
+        self.chat_total_tokens = 0
 
     def trim_history(self):
         if self.chat_total_tokens >= 4000 or self._get_current_tokens() > 4000:
             self.chat_history = self.chat_history[:1] + self.chat_history[-5:]
             while self._get_current_tokens() > 4000 and len(self.chat_history) > 2:
-                chat_history = self.chat_history[:1] + self.chat_history[2:]
+                self.chat_history = self.chat_history[:1] + self.chat_history[2:]
             return True
         return False
 
@@ -178,7 +177,6 @@ class CmdSession:
         self.box(help_text)
 
     def __init__(self):
-        self.multiline_mode = False
         self.console = Console()
 
         self.multiline_mode = False
