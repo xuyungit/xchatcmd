@@ -45,8 +45,8 @@ class CmdSession:
             return True
         return False
 
-    @bindings.add('enter', filter=insert_mode & is_multiline)
     @staticmethod
+    @bindings.add('enter', filter=insert_mode & is_multiline)
     def _(event: KeyPressEvent):
         if CmdSession.is_command(event.current_buffer.text):
             event.current_buffer.validate_and_handle()
