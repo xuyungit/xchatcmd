@@ -28,7 +28,7 @@ class CmdSession:
 
         self.multiline_mode = False
         if '-m' in sys.argv:
-            multiline_mode = True
+            self.multiline_mode = True
         self.colorful_mode = True
         if '-c' in sys.argv:
             self.colorful_mode = False
@@ -62,13 +62,13 @@ class CmdSession:
             return 0 <= val <= 2
         return True
 
-    def box(self, message: str|Markdown):
-        self.console.print(Panel(message, expand=False))
+    def box(self, message: str|Markdown, title=''):
+        self.console.print(Panel(message, expand=False, title=title))
 
     def get_input(self, prompt_mark: str):
         validator = Validator.from_callable(
             CmdSession.is_valid_cmd,
-            error_message="非法命令，请输入h查看帮助",
+            error_message="Illegal command. Please enter 'h' to view help.",
             move_cursor_to_end=True
         )
         custom_style = Style.from_dict({
@@ -83,28 +83,28 @@ class CmdSession:
         )
         return ret
 
-    def show_help_dialog(self):
+    def show_help(self, title=''):
         help_text = '''
-    h: 显示帮助
-    bye: 退出
-    cls: 清除聊天上下文
-    m: 切换多行模式
-    s: 切换单行模式
-    t=float_val: 设置Temperature参数。参数的取值范围为0~2，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大
+    h: Display Help
+    bye: Quit
+    cls: Clear Chat Context
+    m: Switch to multiple line mode
+    s: Switch to single line mode
+    t=0.7: Set Temperature of API (0-2)
     '''
-        self.box(help_text)
+        self.box(help_text, title)
 
     def switch_to_multiple_line_mode(self):
         self.multiline_mode = True
-        self.box('当前运行在多行模式下，输入完成后，按Alt+Enter来进行发送。使用s命令切换到单行模式。')
+        self.box('Multiple Line Mode, use Alt+Enter to send. Use s to switch back to Single Line Mode.')
 
     def switch_to_single_line_mode(self):
         self.multiline_mode = False
-        self.box('当前运行在单行模式下，回车即发送。使用m命令切换到多行模式。')
+        self.box('Single Line Mode, use Enter to send. Use m to switch back to Multiple Line Mode.')
 
     def handle_cls_command(self, chat_session: ChatSession):
         chat_session.clear_context()
-        self.box('聊天上下文已经清除。')
+        self.box('chat context cleared.')
 
     def handle_m_command(self):
         self.switch_to_multiple_line_mode()
@@ -114,7 +114,7 @@ class CmdSession:
 
     def handle_t_command(self, user_text: str, chat_session: ChatSession):
         chat_session.change_temperature(user_text)
-        self.box(f'Temperature参数修改为{chat_session.temperature}')
+        self.box(f'Temperature is set to {chat_session.temperature}')
 
     def handle_system_command(self, chat_session):
         ret = input_dialog(
@@ -125,22 +125,21 @@ class CmdSession:
         chat_session.change_system_message(ret)
 
     def handle_h_command(self):
-        self.show_help_dialog()
+        self.show_help()
 
     def handle_exit_command(self):
         self.box('bye')
 
     def process_user_text(self, user_text: str, chat_session: ChatSession):
-        chat_session.append_user_message(user_text)
         trimmed = chat_session.trim_history()
         if trimmed:
-            self.box('注意：当前对话交互文字过多，现清除部分上下文。\n建议适当时使用cls清除上下文，开始新的会话')
+            self.box('Attention: The context of chat is too long, some context has been cleared.\nTo clear the remaining context, you can use the command "cls".')
         self.logger.log_prompt(user_text)
         if False:
             handle_stream_output(chat_history)
         else:
             with self.console.status("[bold green]Asking...", spinner="point") as status:
-                response = chat_session.ask()
+                response = chat_session.ask(user_text)
                 self.logger.log_answer(response)
                 if self.colorful_mode:
                     self.console.print("[bold blue]ChatGPT[/bold blue]")
@@ -153,13 +152,7 @@ class CmdSession:
 
     def start_chat(self):
         chat_session = ChatSession()
-        welcome_message = f"""\
-欢迎使用**ChatGPT**，会话中使用`h`显示帮助，`bye`退出，`cls`清除聊天上下文，`m`切换多行模式
-
-可以使用`t=0.2`这样的方式设置`Temperature`参数。参数的取值范围为**0~2**，数值越小生成的文本越确定，数值越大随机性/创意/出错概率就越大。当前值为{chat_session.temperature}
-        """
-        welcome_message = Markdown(welcome_message, inline_code_lexer="auto", inline_code_theme="monokai")
-        self.box(welcome_message)
+        self.show_help(title='Welcome to ChatGPT')
 
         while True:
             try:

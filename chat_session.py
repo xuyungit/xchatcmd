@@ -134,13 +134,17 @@ class ChatSession:
             if 0 <= val <= 2:
                 self.temperature = val
 
-    def ask(self):
+    def ask(self, user_text):
         """
         Sends the chat history to the OpenAI API and retrieves the AI assistant's response.
 
+        Args:
+            user_text (str): The user's message to send to the OpenAI API.
         Returns:
             str: The AI assistant's response text.
         """
+        self.append_user_message(user_text)
+        
         response = openai.ChatCompletion.create(
             model = self.model,
             messages = self.chat_history,
@@ -152,3 +156,4 @@ class ChatSession:
         total_tokens = response.usage.total_tokens # type: ignore
         self.append_assistant_message(response_text, total_tokens)
         return response_text
+
