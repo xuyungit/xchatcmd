@@ -131,13 +131,19 @@ class CmdSession:
     def handle_exit_command(self):
         self.box('bye')
 
+    def handle_stream_output(self, chat_session: ChatSession, user_text: str):
+        response = chat_session.ask_stream(user_text)
+        with Live("[bold green]Asking...", refresh_per_second=0.5) as live:
+            for r in response:
+                live.update(r)
+    
     def process_user_text(self, user_text: str, chat_session: ChatSession):
         trimmed = chat_session.trim_history()
         if trimmed:
             self.box('Attention: The context of chat is too long, some context has been cleared.\nTo clear the remaining context, you can use the command "cls".')
         self.logger.log_prompt(user_text)
         if False:
-            handle_stream_output(chat_history)
+            self.handle_stream_output(chat_session, user_text)
         else:
             with self.console.status("[bold green]Asking...", spinner="point") as status:
                 response = chat_session.ask(user_text)

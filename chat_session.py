@@ -144,7 +144,7 @@ class ChatSession:
             str: The AI assistant's response text.
         """
         self.append_user_message(user_text)
-        
+
         response = openai.ChatCompletion.create(
             model = self.model,
             messages = self.chat_history,
@@ -157,3 +157,22 @@ class ChatSession:
         self.append_assistant_message(response_text, total_tokens)
         return response_text
 
+    def ask_stream(self, user_text: str) -> str:
+        
+        self.append_user_message(user_text)
+
+        response = openai.ChatCompletion.create(
+            model = self.model,
+            messages = self.chat_history,
+            request_timeout = 120,
+            timeout = 120,
+            temperature = self.temperature,
+            stream=True
+        )
+        content = ''
+        for v in response:
+            if v.choices and "content" in v.choices[0].delta and v.choices[0].delta.content:  # type: ignore
+                content += v.choices[0].delta.content  # type: ignore
+                yield content # type: ignore
+        if content:
+            self.append_assistant_message(content, self._count_current_tokens())
