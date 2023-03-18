@@ -1,4 +1,5 @@
 import sys
+from typing import Union
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
@@ -62,7 +63,7 @@ class CmdSession:
             return 0 <= val <= 2
         return True
 
-    def box(self, message: str|Markdown, title=''):
+    def box(self, message: Union[str, Markdown], title=''):
         self.console.print(Panel(message, expand=False, title=title))
 
     def get_input(self, prompt_mark: str):
