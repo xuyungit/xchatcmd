@@ -140,26 +140,37 @@ class CmdSession:
             for r in response:
                 markdown = Markdown(r, inline_code_lexer="auto", inline_code_theme="monokai")
                 live.update(markdown)
-    
+
+    def handle_output(self, user_text, chat_session):
+        with self.console.status("[bold green]Asking...", spinner="point") as status:
+            response = chat_session.ask(user_text)
+            self.logger.log_answer(response)
+            if self.colorful_mode:
+                self.console.print("[bold blue]ChatGPT[/bold blue]")
+                markdown = Markdown(response, inline_code_lexer="auto", inline_code_theme="monokai",)
+                self.console.print(markdown)
+            else:
+                print("ChatGPT")
+                print(response)
+            status.update("[bold green]Done!")
+
     def process_user_text(self, user_text: str, chat_session: ChatSession):
         trimmed = chat_session.trim_history()
         if trimmed:
             self.box('Attention: The context of chat is too long, some context has been cleared.\nTo clear the remaining context, you can use the command "cls".')
         self.logger.log_prompt(user_text)
         if self.stream_mode:
-            self.handle_stream_output(chat_session, user_text)
+            try:
+                self.handle_stream_output(chat_session, user_text)
+            except Exception as e:
+                self.logger.log_error(str(e))
+                raise e
         else:
-            with self.console.status("[bold green]Asking...", spinner="point") as status:
-                response = chat_session.ask(user_text)
-                self.logger.log_answer(response)
-                if self.colorful_mode:
-                    self.console.print("[bold blue]ChatGPT[/bold blue]")
-                    markdown = Markdown(response, inline_code_lexer="auto", inline_code_theme="monokai",)
-                    self.console.print(markdown)
-                else:
-                    print("ChatGPT")
-                    print(response)
-                status.update("[bold green]Done!")
+            try:
+                self.handle_output(user_text, chat_session)
+            except Exception as e:
+                self.logger.log_error(str(e))
+                raise e
 
     def start_chat(self):
         chat_session = ChatSession()
