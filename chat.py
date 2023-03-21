@@ -131,8 +131,9 @@ class CmdSession:
     def handle_h_command(self):
         self.show_help()
 
-    def handle_exit_command(self):
-        self.box('Bye')
+    def handle_exit_command(self, chat_session: ChatSession):
+        self.box(f'\nToken consumed: {chat_session.get_tokens_consumed()}\nCost of this session: {chat_session.get_session_cost():.2f}',
+            title='Bye')
 
     def handle_stream_output(self, chat_session: ChatSession, user_text: str):
         response = chat_session.ask_stream(user_text)
@@ -202,12 +203,13 @@ class CmdSession:
                     self.handle_h_command()
                     continue
                 if user_text.strip() in ('exit', 'bye', 'quit'):
-                    self.handle_exit_command()
+                    self.handle_exit_command(chat_session)
                     break
 
                 self.process_user_text(user_text, chat_session)
             except KeyboardInterrupt:
-                self.box('bye')
+                # self.box('bye')
+                self.handle_exit_command(chat_session)
                 break
 
 

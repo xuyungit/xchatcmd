@@ -28,6 +28,8 @@ class ChatSession:
         self.current_context_tokens = self._count_current_tokens()
         self.temperature = 0.7
         self.model = "gpt-3.5-turbo"
+        self.tokens_consumed = 0
+        self.price = 0.002
         set_openapi_conf()
 
     def _count_tokens(self, text: str) -> int:
@@ -155,6 +157,7 @@ class ChatSession:
         )
         response_text = response.choices[0].message.content # type: ignore
         total_tokens = response.usage.total_tokens # type: ignore
+        self.tokens_consumed += total_tokens
         self.append_assistant_message(response_text, total_tokens)
         return response_text
 
@@ -177,3 +180,12 @@ class ChatSession:
                 yield content # type: ignore
         if content:
             self.append_assistant_message(content, self._count_current_tokens())
+
+    def get_tokens_consumed(self):
+        return self.tokens_consumed
+
+    def get_session_cost(self):
+        cost = self.tokens_consumed * self.price / 1000
+        if cost <= 0.01:
+            cost = 0.01
+        return cost
