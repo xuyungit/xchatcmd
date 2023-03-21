@@ -156,7 +156,7 @@ class CmdSession:
             status.update("[bold green]Done!")
 
     def process_user_text(self, user_text: str, chat_session: ChatSession):
-        trimmed = chat_session.trim_history()
+        trimmed = chat_session.trim_context()
         if trimmed:
             self.box('[bold red]Attention: The context of chat is too long, some context has been cleared.[/bold red]\n'
                 'To clear the remaining context, you can use the command "cls".')

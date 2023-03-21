@@ -10,7 +10,7 @@ class ChatSession:
     """
     def __init__(self):
         """
-        Initializes a ChatSession object with default values for system message, chat history,
+        Initializes a ChatSession object with default values for system message, chat context,
         total tokens, temperature, and model.
         """
         # possible system messages:
@@ -22,10 +22,10 @@ class ChatSession:
 
         self.MAX_TOKEN = 4000
         self.system_message: str = 'You are a helpful assistant.'
-        self.chat_history = [
+        self.chat_context = [
             {"role": "system", "content": f"{self.system_message}"},
         ]
-        self.chat_total_tokens = 0
+        self.current_context_tokens = self._count_current_tokens()
         self.temperature = 0.7
         self.model = "gpt-3.5-turbo"
         set_openapi_conf()
@@ -45,52 +45,52 @@ class ChatSession:
 
     def _count_current_tokens(self):
         """
-        Counts the total number of tokens in the current chat history.
+        Counts the total number of tokens in the current chat context.
 
         Returns:
-            int: The total number of tokens in the chat history.
+            int: The total number of tokens in the chat context.
         """
-        return sum(self._count_tokens(item['content']) for item in self.chat_history)
+        return sum(self._count_tokens(item['content']) for item in self.chat_context)
 
     def append_user_message(self, user_text):
         """
-        Appends a user message to the chat history.
+        Appends a user message to the chat context.
 
         Args:
-            user_text (str): The user's message to add to the chat history.
+            user_text (str): The user's message to add to the chat context.
         """
         if user_text.strip():
-            self.chat_history.append({
+            self.chat_context.append({
                 "role": "user",
                 "content": user_text
             })
 
     def append_assistant_message(self, assistant_text, total_tokens):
         """
-        Appends an assistant message to the chat history and updates the total tokens.
+        Appends an assistant message to the chat context and updates the total tokens.
 
         Args:
-            assistant_text (str): The assistant's message to add to the chat history.
+            assistant_text (str): The assistant's message to add to the chat context.
             total_tokens (int): The updated total tokens after receiving the assistant's message.
         """
-        self.chat_history.append({
+        self.chat_context.append({
             "role": "assistant",
             "content": f"{assistant_text}"
         })
-        self.chat_total_tokens = total_tokens
+        self.current_context_tokens = total_tokens
 
     def clear_context(self):
         """
-        Clears the chat history except for the system message and resets the total tokens.
+        Clears the chat context except for the system message and resets the total tokens.
         """
-        self.chat_history = [
+        self.chat_context = [
             {"role": "system", "content": f"{self.system_message}"},
         ]
-        self.chat_total_tokens = 0
+        self.current_context_tokens = 0
 
     def change_system_message(self, text):
         """
-        Changes the system message and clears the chat history, keeping only the new system message.
+        Changes the system message and clears the chat context, keeping only the new system message.
 
         Args:
             text (str): The new system message text.
@@ -98,25 +98,25 @@ class ChatSession:
         if text is None:
             return
         if not text.strip():
-            self.chat_history = []
+            self.chat_context = []
         else:
             self.system_message = text
-            self.chat_history = [
+            self.chat_context = [
                 {"role": "system", "content": f"{self.system_message}"},
             ]
-        self.chat_total_tokens = 0
+        self.current_context_tokens = 0
 
-    def trim_history(self):
+    def trim_context(self):
         """
-        Trims the chat history if the token count exceeds the limit (4000 by default).
+        Trims the chat context if the token count exceeds the limit (4000 by default).
 
         Returns:
-            bool: True if the chat history was trimmed, False otherwise.
+            bool: True if the chat context was trimmed, False otherwise.
         """
-        if self.chat_total_tokens >= self.MAX_TOKEN or self._count_current_tokens() > self.MAX_TOKEN:
-            self.chat_history = self.chat_history[:1] + self.chat_history[-5:]
-            while self._count_current_tokens() > self.MAX_TOKEN and len(self.chat_history) > 2:
-                self.chat_history = self.chat_history[:1] + self.chat_history[2:]
+        if self.current_context_tokens >= self.MAX_TOKEN or self._count_current_tokens() > self.MAX_TOKEN:
+            self.chat_context = self.chat_context[:1] + self.chat_context[-5:]
+            while self._count_current_tokens() > self.MAX_TOKEN and len(self.chat_context) > 2:
+                self.chat_context = self.chat_context[:1] + self.chat_context[2:]
             return True
         return False
 
@@ -137,7 +137,7 @@ class ChatSession:
 
     def ask(self, user_text):
         """
-        Sends the chat history to the OpenAI API and retrieves the AI assistant's response.
+        Sends the chat context to the OpenAI API and retrieves the AI assistant's response.
 
         Args:
             user_text (str): The user's message to send to the OpenAI API.
@@ -148,7 +148,7 @@ class ChatSession:
 
         response = openai.ChatCompletion.create(
             model = self.model,
-            messages = self.chat_history,
+            messages = self.chat_context,
             request_timeout = 120,
             timeout = 120,
             temperature = self.temperature
@@ -164,7 +164,7 @@ class ChatSession:
 
         response = openai.ChatCompletion.create(
             model = self.model,
-            messages = self.chat_history,
+            messages = self.chat_context,
             request_timeout = 120,
             timeout = 120,
             temperature = self.temperature,
