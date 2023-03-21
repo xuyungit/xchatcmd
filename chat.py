@@ -94,6 +94,7 @@ class CmdSession:
     m: Switch to multiple line mode
     s: Switch to single line mode
     t=0.7: Set Temperature of API (0-2)
+    system=: Change system prompt
     '''
         self.box(help_text, title)
 
@@ -131,7 +132,7 @@ class CmdSession:
         self.show_help()
 
     def handle_exit_command(self):
-        self.box('bye')
+        self.box('Bye')
 
     def handle_stream_output(self, chat_session: ChatSession, user_text: str):
         response = chat_session.ask_stream(user_text)
@@ -157,7 +158,8 @@ class CmdSession:
     def process_user_text(self, user_text: str, chat_session: ChatSession):
         trimmed = chat_session.trim_history()
         if trimmed:
-            self.box('Attention: The context of chat is too long, some context has been cleared.\nTo clear the remaining context, you can use the command "cls".')
+            self.box('[bold red]Attention: The context of chat is too long, some context has been cleared.[/bold red]\n'
+                'To clear the remaining context, you can use the command "cls".')
         self.logger.log_prompt(user_text)
         if self.stream_mode:
             try:

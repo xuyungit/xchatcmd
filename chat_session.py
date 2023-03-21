@@ -1,3 +1,4 @@
+from collections.abc import Generator
 import openai
 import tiktoken
 
@@ -157,8 +158,8 @@ class ChatSession:
         self.append_assistant_message(response_text, total_tokens)
         return response_text
 
-    def ask_stream(self, user_text: str) -> str:
-        
+    def ask_stream(self, user_text: str) -> Generator:
+
         self.append_user_message(user_text)
 
         response = openai.ChatCompletion.create(
