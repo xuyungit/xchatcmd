@@ -1,5 +1,6 @@
 import time
 import argparse
+from pathlib import Path
 import openai
 import tiktoken
 from conf import set_openapi_conf
@@ -158,6 +159,12 @@ if __name__ == '__main__':
     if not openai.api_key:
         print('API KEY is not configured')
         exit(1)
+
+    source_file = Path(arg.source)
+    if not source_file.is_file():
+        print(f'{arg.source} is not available')
+        exit(1)
+
     translate(
         source_english_filename=arg.source,
         output_chinese_filename=arg.output,
