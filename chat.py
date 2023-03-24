@@ -1,4 +1,5 @@
 import sys
+import argparse
 from typing import Union
 from rich.console import Console
 from rich.markdown import Markdown
@@ -28,13 +29,17 @@ class CmdSession:
         self.console = Console()
         self.stream_mode = False
         self.multiline_mode = False
-        if '-m' in sys.argv:
-            self.multiline_mode = True
-        self.colorful_mode = True
-        if '-c' in sys.argv:
-            self.colorful_mode = False
-        if '-s' in sys.argv:
-            self.stream_mode = True
+
+        parser = argparse.ArgumentParser(description='ChatGPT')
+        parser.add_argument('-m', '--multiline', action='store_true', help='Switch to multiple line mode')
+        parser.add_argument('-c', '--nocolor', action='store_true', help='Disable colorful output')
+        parser.add_argument('-s', '--stream', action='store_true', help='Enable stream output')
+        args = parser.parse_args()
+        
+        self.multiline_mode = args.multiline
+        self.colorful_mode = not args.nocolor
+        self.stream_mode = args.stream
+
 
         self.logger = SimpleLogger()
 
