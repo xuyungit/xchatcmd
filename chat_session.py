@@ -1,8 +1,16 @@
+import os
+from pathlib import Path
 from collections.abc import Generator
 import openai
 import tiktoken
 
 from conf import set_openapi_conf
+
+home_directory = str(Path.home())
+tiktoken_cache_path = Path.home() / Path('.chatgpt') / Path('data-gym-cache')
+if not tiktoken_cache_path.exists:
+    tiktoken_cache_path.mkdir()
+os.environ['DATA_GYM_CACHE_DIR'] = str(tiktoken_cache_path)
 
 class ChatSession:
     """
