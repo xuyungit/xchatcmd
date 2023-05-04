@@ -1,4 +1,5 @@
 import os
+import copy
 from pathlib import Path
 from collections.abc import Generator
 import openai
@@ -144,6 +145,25 @@ class ChatSession:
                 return
             if 0 <= val <= 2:
                 self.temperature = val
+
+    def summarize(self):
+        context = copy.deepcopy(self.chat_context)
+        prompt = 'Summarize the above chat as accurately as possible. The summary should be less than 3 sentences. If the chat is mostly in Chinese, use Chinese for the summary; otherwise, use English for the summary.'
+        context.append({
+            "role": "system",
+            "content": prompt
+        })
+        response = openai.ChatCompletion.create(
+            model = self.model,
+            messages = context,
+            request_timeout = 120,
+            timeout = 120,
+            temperature = 0
+        )
+        response_text = response.choices[0].message.content # type: ignore
+        total_tokens = response.usage.total_tokens # type: ignore
+        self.tokens_consumed += total_tokens
+        return response_text
 
     def ask(self, user_text):
         """

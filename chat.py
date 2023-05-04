@@ -35,7 +35,7 @@ class CmdSession:
         parser.add_argument('-c', '--nocolor', action='store_true', help='Disable colorful output')
         parser.add_argument('-s', '--stream', action='store_true', help='Enable stream output')
         args = parser.parse_args()
-        
+
         self.multiline_mode = args.multiline
         self.colorful_mode = not args.nocolor
         self.stream_mode = args.stream
@@ -112,8 +112,9 @@ class CmdSession:
         self.box('Single Line Mode, use Enter to send. Use m to switch back to Multiple Line Mode.')
 
     def handle_cls_command(self, chat_session: ChatSession):
+        summary = chat_session.summarize()
         chat_session.clear_context()
-        self.box('chat context cleared.')
+        self.box(summary, title='chat context cleared.')
 
     def handle_m_command(self):
         self.switch_to_multiple_line_mode()
