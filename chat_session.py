@@ -27,7 +27,7 @@ class ChatSession:
         # You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
         # You are a helpful advisor. Answer as concisely as possible.
         # You are a helpful teacher. Answer as detailed as possible.
-        # available models: "gpt-3.5-turbo", "gpt-3.5-turbo-0301"
+        # available models: "gpt-3.5-turbo", "gpt-3.5-turbo-0301", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k"
 
         self.MAX_TOKEN = 4000
         self.system_message: str = 'You are a helpful assistant.'
@@ -36,7 +36,7 @@ class ChatSession:
         ]
         self.current_context_tokens = self._count_current_tokens()
         self.temperature = 0.7
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-3.5-turbo-0613"
         self.tokens_consumed = 0
         self.price = 0.002
         set_openapi_conf()
