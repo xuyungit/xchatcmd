@@ -2,7 +2,8 @@ import os
 import copy
 from pathlib import Path
 from collections.abc import Generator
-import openai
+# import openai
+from openai import OpenAI
 import tiktoken
 
 from conf import set_openapi_conf
@@ -176,12 +177,22 @@ class ChatSession:
         """
         self.append_user_message(user_text)
 
-        response = openai.ChatCompletion.create(
-            model = self.model,
-            messages = self.chat_context,
-            request_timeout = 120,
-            timeout = 120,
-            temperature = self.temperature
+        # response = openai.ChatCompletion.create(
+        #     model = self.model,
+        #     messages = self.chat_context,
+        #     request_timeout = 120,
+        #     timeout = 120,
+        #     temperature = self.temperature
+        # )
+        client = OpenAI(
+            # This is the default and can be omitted
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            base_url=os.environ.get("OPENAI_API_BASE"),
+        )
+        response = client.chat.completions.create(
+            messages=self.chat_context,
+            model=os.environ.get("OPENAI_CHAT_MODEL", "gpt-3.5-turbo"),
+#            model="gpt-3.5-turbo",
         )
         response_text = response.choices[0].message.content # type: ignore
         total_tokens = response.usage.total_tokens # type: ignore
